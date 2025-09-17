@@ -95,9 +95,11 @@
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Authorization": API_KEY
+                            "Authorization": API_KEY,
+                            "API-Version": "2023-10"
                         },
-                        body: JSON.stringify({ query })
+                        body: JSON.stringify({ query }),
+                        mode: 'cors'
                     });
 
                     const data = await res.json();
@@ -139,7 +141,11 @@
             } catch (err) {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = 'Error: ' + err.message;
+                document.getElementById('error').innerHTML = `
+                    <strong>Error:</strong> ${err.message}<br>
+                    <small>Make sure to replace YOUR_MONDAY_API_KEY_HERE with your actual API key</small>
+                `;
+                console.error('Full error:', err);
             }
         }
 
