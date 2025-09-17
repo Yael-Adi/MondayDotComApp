@@ -21,7 +21,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔗 API Gateway Test Consumers Missing in Production</h1>
+        <h1>🔗 API GW Test Consumers Missing in Production</h1>
         
         <div id="loading" class="loading">
             <div>🔄 Loading data from Monday.com...</div>
@@ -30,23 +30,10 @@
         
         <div id="results" style="display: none;">
             <div class="summary">
-                <strong>✅ Analysis Complete:</strong> Found consumers that exist in Test environment but are missing in Production.
+                <strong>✅ Analysis Complete:</strong> Found <span id="summary-count">0</span> consumers that exist in Test environment but are missing in Production.
             </div>
             
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number" id="unique-count">0</div>
-                    <div class="stat-label">Missing in Prod</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="test-count">0</div>
-                    <div class="stat-label">Test Consumers</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number" id="prod-count">0</div>
-                    <div class="stat-label">Prod Consumers</div>
-                </div>
-            </div>
+
             
             <h3>🚨 Consumers Missing in Production:</h3>
             <div class="items" id="items-list"></div>
@@ -129,9 +116,7 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('results').style.display = 'block';
                 
-                document.getElementById('unique-count').textContent = uniqueItems.length;
-                document.getElementById('test-count').textContent = firstGroupItems.length;
-                document.getElementById('prod-count').textContent = thirdGroupItems.length;
+                document.getElementById('summary-count').textContent = uniqueItems.length;
                 
                 const list = document.getElementById('items-list');
                 list.innerHTML = uniqueItems.map((item, i) => `<div class="item">${i + 1}. ${item.name}</div>`).join('');
