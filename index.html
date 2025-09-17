@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API GW Test Consumers Missing in Prod</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; background: #f5f5f5; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #0073ea; border-bottom: 2px solid #0073ea; padding-bottom: 10px; }
+        .summary { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0073ea; }
+        .stats { display: flex; gap: 20px; margin: 20px 0; }
+        .stat { background: #f8f9fa; padding: 15px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid #dee2e6; }
+        .stat-number { font-size: 24px; font-weight: bold; color: #0073ea; }
+        .stat-label { color: #666; margin-top: 5px; font-size: 14px; }
+        .items { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .item { padding: 8px 12px; margin: 4px 0; background: white; border-radius: 4px; border-left: 3px solid #0073ea; }
+        .loading { text-align: center; color: #666; padding: 40px; }
+        .error { color: #d63384; background: #f8d7da; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 API Gateway Test Consumers Missing in Production</h1>
+        
+        <div id="loading" class="loading">
+            <div>🔄 Loading data from Monday.com...</div>
+            <div style="margin-top: 10px; font-size: 14px;">Board ID: 9208832153</div>
+        </div>
+        
+        <div id="results" style="display: none;">
+            <div class="summary">
+                <strong>✅ Analysis Complete:</strong> Found consumers that exist in Test environment but are missing in Production.
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-number" id="unique-count">0</div>
+                    <div class="stat-label">Missing in Prod</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="test-count">0</div>
+                    <div class="stat-label">Test Consumers</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="prod-count">0</div>
+                    <div class="stat-label">Prod Consumers</div>
+                </div>
+            </div>
+            
+            <h3>🚨 Consumers Missing in Production:</h3>
+            <div class="items" id="items-list"></div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div class="footer">
+            Last updated: <span id="timestamp"></span> | Auto-refreshes every 5 minutes
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "YOUR_MONDAY_API_KEY_HERE";
+        const BOARD_ID = 9208832153;
+
+        async function fetchData() {
+            try {
+                let allItems = [];
+                let cursor = null;
+                let groups = [];
+                
+                do {
+                    const query = `
+                        query {
+                            boards(ids: [${BOARD_ID}]) {
+                                items_page(limit: 100${cursor ? `, cursor: "${cursor}"` : ''}) {
+                                    cursor
+                                    items {
+                                        id
+                                        name
+                                        group {
+                                            id
+                                            title
+                                        }
+                                    }
+                                }
+                                groups {
+                                    id
+                                    title
+                                }
+                            }
+                        }`;
+
+                    const res = await fetch("https://api.monday.com/v2", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": API_KEY
+                        },
+                        body: JSON.stringify({ query })
+                    });
+
+                    const data = await res.json();
+                    const board = data.data?.boards?.[0];
+                    
+                    if (!board) throw new Error("Board not found");
+
+                    const pageItems = board.items_page?.items || [];
+                    allItems = allItems.concat(pageItems);
+                    cursor = board.items_page?.cursor;
+                    
+                    if (groups.length === 0) {
+                        groups = board.groups || [];
+                    }
+                    
+                } while (cursor);
+
+                const firstGroupTitle = groups[0]?.title;
+                const thirdGroupTitle = groups[2]?.title;
+                
+                const firstGroupItems = allItems.filter(i => i.group?.title === firstGroupTitle);
+                const thirdGroupItems = allItems.filter(i => i.group?.title === thirdGroupTitle);
+                const thirdGroupItemNames = thirdGroupItems.map(i => i.name);
+                
+                const uniqueItems = firstGroupItems.filter(i => !thirdGroupItemNames.includes(i.name));
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+                
+                document.getElementById('unique-count').textContent = uniqueItems.length;
+                document.getElementById('test-count').textContent = firstGroupItems.length;
+                document.getElementById('prod-count').textContent = thirdGroupItems.length;
+                
+                const list = document.getElementById('items-list');
+                list.innerHTML = uniqueItems.map((item, i) => `<div class="item">${i + 1}. ${item.name}</div>`).join('');
+                
+                document.getElementById('timestamp').textContent = new Date().toLocaleString();
+
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = 'Error: ' + err.message;
+            }
+        }
+
+        fetchData();
+        setInterval(fetchData, 300000); // Refresh every 5 minutes
+    </script>
+</body>
+</html>
