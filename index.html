@@ -33,8 +33,6 @@
                 <strong>✅ Analysis Complete:</strong> Found <span id="summary-count">0</span> consumers that exist in Test environment but are missing in Production.
             </div>
             
-
-            
             <h3>🚨 Consumers Missing in Production:</h3>
             <div class="items" id="items-list"></div>
         </div>
@@ -42,7 +40,7 @@
         <div id="error" class="error" style="display: none;"></div>
         
         <div class="footer">
-            Last updated: <span id="timestamp"></span> | Auto-refreshes every 5 minutes
+            Last updated: <span id="timestamp"></span>
         </div>
     </div>
 
@@ -133,9 +131,7 @@
                 console.error('Full error:', err);
             }
         }
-
         fetchData();
-        setInterval(fetchData, 300000); // Refresh every 5 minutes
     </script>
 </body>
 </html>
